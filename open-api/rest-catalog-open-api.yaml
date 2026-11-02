@@ -5238,9 +5238,18 @@ components:
           type: string
           format: uuid
         metadata-location:
-          $ref: "#/components/schemas/EventTableMetadataLocation"
+          type: string
+          description: >
+            Location of the table metadata after the change described by this event. MUST be present
+            if, after this change, the catalog returns a `metadata-location` for the table in
+            `LoadTableResult`.
         updates:
-          $ref: "#/components/schemas/EventTableUpdates"
+          description: >
+            The changes the catalog applied to create the table. The rules for `updates` in
+            `UpdateTableOperation` apply.
+          type: array
+          items:
+            $ref: "#/components/schemas/TableUpdate"
 
     RegisterTableOperation:
       allOf:
@@ -5259,11 +5268,15 @@ components:
           type: string
           format: uuid
         metadata-location:
-          $ref: "#/components/schemas/EventTableMetadataLocation"
+          type: string
+          description: >
+            Location of the table metadata after the change described by this event. MUST be present
+            if, after this change, the catalog returns a `metadata-location` for the table in
+            `LoadTableResult`.
         updates:
           description: >
             Optional. If not present, consumers that need the table's metadata must load the table
-            from the catalog. If present, the same rules as for `EventTableUpdates` apply.
+            from the catalog. If present, the rules for `updates` in `UpdateTableOperation` apply.
           type: array
           items:
             $ref: "#/components/schemas/TableUpdate"
@@ -5331,37 +5344,32 @@ components:
           type: string
           format: uuid
         metadata-location:
-          $ref: "#/components/schemas/EventTableMetadataLocation"
+          type: string
+          description: >
+            Location of the table metadata after the change described by this event. MUST be present
+            if, after this change, the catalog returns a `metadata-location` for the table in
+            `LoadTableResult`.
         updates:
-          $ref: "#/components/schemas/EventTableUpdates"
+          description: >
+            The changes the catalog applied to the table. These can differ from the changes the
+            client sent: they include values the catalog assigned or chose itself, such as IDs and
+            defaults the client left out, and changes the catalog added, such as properties it sets
+            on commit.
+
+            Updates that add a schema, partition spec or sort order MUST carry the ID the catalog
+            assigned. Updates that set the current schema, the default partition spec or the default
+            sort order MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.
+
+            Consumers that apply these updates to their own copy of the table MUST check that the
+            resulting IDs match the IDs in the event. If they do not match, the consumer's copy has
+            diverged and the consumer should load the table from the catalog.
+          type: array
+          items:
+            $ref: "#/components/schemas/TableUpdate"
         requirements:
           type: array
           items:
             $ref: "#/components/schemas/TableRequirement"
-
-    EventTableMetadataLocation:
-      type: string
-      description: >
-        Location of the table metadata after the change described by this event. MUST be present
-        if, after this change, the catalog returns a `metadata-location` for the table in
-        `LoadTableResult`.
-
-    EventTableUpdates:
-      type: array
-      description: >
-        The changes the catalog applied to the table. These can differ from the changes the client
-        sent: they include values the catalog assigned or chose itself, such as IDs and defaults
-        the client left out, and changes the catalog added, such as properties it sets on commit.
-
-        Updates that add a schema, partition spec or sort order MUST carry the ID the catalog
-        assigned. Updates that set the current schema, the default partition spec or the default
-        sort order MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.
-
-        Consumers that apply these updates to their own copy of the table MUST check that the
-        resulting IDs match the IDs in the event. If they do not match, the consumer's copy has
-        diverged and the consumer should load the table from the catalog.
-      items:
-        $ref: "#/components/schemas/TableUpdate"
 
     RenameTableOperation:
       allOf:
@@ -5411,9 +5419,18 @@ components:
           type: string
           format: uuid
         metadata-location:
-          $ref: "#/components/schemas/EventViewMetadataLocation"
+          type: string
+          description: >
+            Location of the view metadata after the change described by this event. MUST be present
+            if, after this change, the catalog returns a `metadata-location` for the view in
+            `LoadViewResult`.
         updates:
-          $ref: "#/components/schemas/EventViewUpdates"
+          description: >
+            The changes the catalog applied to create the view. The rules for `updates` in
+            `UpdateViewOperation` apply.
+          type: array
+          items:
+            $ref: "#/components/schemas/ViewUpdate"
 
     RegisterViewOperation:
       allOf:
@@ -5432,11 +5449,15 @@ components:
           type: string
           format: uuid
         metadata-location:
-          $ref: "#/components/schemas/EventViewMetadataLocation"
+          type: string
+          description: >
+            Location of the view metadata after the change described by this event. MUST be present
+            if, after this change, the catalog returns a `metadata-location` for the view in
+            `LoadViewResult`.
         updates:
           description: >
             Optional. If not present, consumers that need the view's metadata must load the view
-            from the catalog. If present, the same rules as for `EventViewUpdates` apply.
+            from the catalog. If present, the rules for `updates` in `UpdateViewOperation` apply.
           type: array
           items:
             $ref: "#/components/schemas/ViewUpdate"
@@ -5476,37 +5497,32 @@ components:
           type: string
           format: uuid
         metadata-location:
-          $ref: "#/components/schemas/EventViewMetadataLocation"
+          type: string
+          description: >
+            Location of the view metadata after the change described by this event. MUST be present
+            if, after this change, the catalog returns a `metadata-location` for the view in
+            `LoadViewResult`.
         updates:
-          $ref: "#/components/schemas/EventViewUpdates"
+          description: >
+            The changes the catalog applied to the view. These can differ from the changes the
+            client sent: they include values the catalog assigned or chose itself, such as IDs and
+            defaults the client left out, and changes the catalog added, such as properties it sets
+            on commit.
+
+            Updates that add a schema or a view version MUST carry the ID the catalog assigned. The
+            `schema-id` of an added view version and the update that sets the current view version
+            MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.
+
+            Consumers that apply these updates to their own copy of the view MUST check that the
+            resulting IDs match the IDs in the event. If they do not match, the consumer's copy has
+            diverged and the consumer should load the view from the catalog.
+          type: array
+          items:
+            $ref: "#/components/schemas/ViewUpdate"
         requirements:
           type: array
           items:
             $ref: "#/components/schemas/ViewRequirement"
-
-    EventViewMetadataLocation:
-      type: string
-      description: >
-        Location of the view metadata after the change described by this event. MUST be present
-        if, after this change, the catalog returns a `metadata-location` for the view in
-        `LoadViewResult`.
-
-    EventViewUpdates:
-      type: array
-      description: >
-        The changes the catalog applied to the view. These can differ from the changes the client
-        sent: they include values the catalog assigned or chose itself, such as IDs and defaults
-        the client left out, and changes the catalog added, such as properties it sets on commit.
-
-        Updates that add a schema or a view version MUST carry the ID the catalog assigned. The
-        `schema-id` of an added view version and the update that sets the current view version
-        MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.
-
-        Consumers that apply these updates to their own copy of the view MUST check that the
-        resulting IDs match the IDs in the event. If they do not match, the consumer's copy has
-        diverged and the consumer should load the view from the catalog.
-      items:
-        $ref: "#/components/schemas/ViewUpdate"
 
     CreateNamespaceOperation:
       allOf:

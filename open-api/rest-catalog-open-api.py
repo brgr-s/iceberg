@@ -1003,24 +1003,10 @@ class DropTableOperation(BaseOperation):
     )
 
 
-class EventTableMetadataLocation(RootModel[str]):
-    root: str = Field(
-        ...,
-        description='Location of the table metadata after the change described by this event. MUST be present if, after this change, the catalog returns a `metadata-location` for the table in `LoadTableResult`.\n',
-    )
-
-
 class DropViewOperation(BaseOperation):
     operation_type: Literal['drop-view'] = Field(..., alias='operation-type')
     identifier: TableIdentifier
     view_uuid: UUID = Field(..., alias='view-uuid')
-
-
-class EventViewMetadataLocation(RootModel[str]):
-    root: str = Field(
-        ...,
-        description='Location of the view metadata after the change described by this event. MUST be present if, after this change, the catalog returns a `metadata-location` for the view in `LoadViewResult`.\n',
-    )
 
 
 class CreateNamespaceOperation(CreateNamespaceResponse, BaseOperation):
@@ -2241,22 +2227,29 @@ class CreateTableOperation(BaseOperation):
     operation_type: Literal['create-table'] = Field(..., alias='operation-type')
     identifier: TableIdentifier
     table_uuid: UUID = Field(..., alias='table-uuid')
-    metadata_location: EventTableMetadataLocation | None = Field(
-        None, alias='metadata-location'
+    metadata_location: str | None = Field(
+        None,
+        alias='metadata-location',
+        description='Location of the table metadata after the change described by this event. MUST be present if, after this change, the catalog returns a `metadata-location` for the table in `LoadTableResult`.\n',
     )
-    updates: EventTableUpdates
+    updates: list[TableUpdate] = Field(
+        ...,
+        description='The changes the catalog applied to create the table. The rules for `updates` in `UpdateTableOperation` apply.\n',
+    )
 
 
 class RegisterTableOperation(BaseOperation):
     operation_type: Literal['register-table'] = Field(..., alias='operation-type')
     identifier: TableIdentifier
     table_uuid: UUID = Field(..., alias='table-uuid')
-    metadata_location: EventTableMetadataLocation | None = Field(
-        None, alias='metadata-location'
+    metadata_location: str | None = Field(
+        None,
+        alias='metadata-location',
+        description='Location of the table metadata after the change described by this event. MUST be present if, after this change, the catalog returns a `metadata-location` for the table in `LoadTableResult`.\n',
     )
     updates: list[TableUpdate] | None = Field(
         None,
-        description="Optional. If not present, consumers that need the table's metadata must load the table from the catalog. If present, the same rules as for `EventTableUpdates` apply.\n",
+        description="Optional. If not present, consumers that need the table's metadata must load the table from the catalog. If present, the rules for `updates` in `UpdateTableOperation` apply.\n",
     )
 
 
@@ -2264,10 +2257,15 @@ class UpdateTableOperation(BaseOperation):
     operation_type: Literal['update-table'] = Field(..., alias='operation-type')
     identifier: TableIdentifier
     table_uuid: UUID = Field(..., alias='table-uuid')
-    metadata_location: EventTableMetadataLocation | None = Field(
-        None, alias='metadata-location'
+    metadata_location: str | None = Field(
+        None,
+        alias='metadata-location',
+        description='Location of the table metadata after the change described by this event. MUST be present if, after this change, the catalog returns a `metadata-location` for the table in `LoadTableResult`.\n',
     )
-    updates: EventTableUpdates
+    updates: list[TableUpdate] = Field(
+        ...,
+        description="The changes the catalog applied to the table. These can differ from the changes the client sent: they include values the catalog assigned or chose itself, such as IDs and defaults the client left out, and changes the catalog added, such as properties it sets on commit.\nUpdates that add a schema, partition spec or sort order MUST carry the ID the catalog assigned. Updates that set the current schema, the default partition spec or the default sort order MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.\nConsumers that apply these updates to their own copy of the table MUST check that the resulting IDs match the IDs in the event. If they do not match, the consumer's copy has diverged and the consumer should load the table from the catalog.\n",
+    )
     requirements: (
         list[
             AssertCreate
@@ -2287,22 +2285,29 @@ class CreateViewOperation(BaseOperation):
     operation_type: Literal['create-view'] = Field(..., alias='operation-type')
     identifier: TableIdentifier
     view_uuid: UUID = Field(..., alias='view-uuid')
-    metadata_location: EventViewMetadataLocation | None = Field(
-        None, alias='metadata-location'
+    metadata_location: str | None = Field(
+        None,
+        alias='metadata-location',
+        description='Location of the view metadata after the change described by this event. MUST be present if, after this change, the catalog returns a `metadata-location` for the view in `LoadViewResult`.\n',
     )
-    updates: EventViewUpdates
+    updates: list[ViewUpdate] = Field(
+        ...,
+        description='The changes the catalog applied to create the view. The rules for `updates` in `UpdateViewOperation` apply.\n',
+    )
 
 
 class RegisterViewOperation(BaseOperation):
     operation_type: Literal['register-view'] = Field(..., alias='operation-type')
     identifier: TableIdentifier
     view_uuid: UUID = Field(..., alias='view-uuid')
-    metadata_location: EventViewMetadataLocation | None = Field(
-        None, alias='metadata-location'
+    metadata_location: str | None = Field(
+        None,
+        alias='metadata-location',
+        description='Location of the view metadata after the change described by this event. MUST be present if, after this change, the catalog returns a `metadata-location` for the view in `LoadViewResult`.\n',
     )
     updates: list[ViewUpdate] | None = Field(
         None,
-        description="Optional. If not present, consumers that need the view's metadata must load the view from the catalog. If present, the same rules as for `EventViewUpdates` apply.\n",
+        description="Optional. If not present, consumers that need the view's metadata must load the view from the catalog. If present, the rules for `updates` in `UpdateViewOperation` apply.\n",
     )
 
 
@@ -2310,10 +2315,15 @@ class UpdateViewOperation(BaseOperation):
     operation_type: Literal['update-view'] = Field(..., alias='operation-type')
     identifier: TableIdentifier
     view_uuid: UUID = Field(..., alias='view-uuid')
-    metadata_location: EventViewMetadataLocation | None = Field(
-        None, alias='metadata-location'
+    metadata_location: str | None = Field(
+        None,
+        alias='metadata-location',
+        description='Location of the view metadata after the change described by this event. MUST be present if, after this change, the catalog returns a `metadata-location` for the view in `LoadViewResult`.\n',
     )
-    updates: EventViewUpdates
+    updates: list[ViewUpdate] = Field(
+        ...,
+        description="The changes the catalog applied to the view. These can differ from the changes the client sent: they include values the catalog assigned or chose itself, such as IDs and defaults the client left out, and changes the catalog added, such as properties it sets on commit.\nUpdates that add a schema or a view version MUST carry the ID the catalog assigned. The `schema-id` of an added view version and the update that sets the current view version MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.\nConsumers that apply these updates to their own copy of the view MUST check that the resulting IDs match the IDs in the event. If they do not match, the consumer's copy has diverged and the consumer should load the view from the catalog.\n",
+    )
     requirements: list[ViewRequirement] | None = None
 
 
@@ -2529,34 +2539,6 @@ class FunctionDataType(
 
 class FunctionArgument(RootModel[ValueExpression | Predicate]):
     root: ValueExpression | Predicate
-
-
-class EventTableUpdates(RootModel[list[TableUpdate]]):
-    """
-    The changes the catalog applied to the table. These can differ from the changes the client sent: they include values the catalog assigned or chose itself, such as IDs and defaults the client left out, and changes the catalog added, such as properties it sets on commit.
-    Updates that add a schema, partition spec or sort order MUST carry the ID the catalog assigned. Updates that set the current schema, the default partition spec or the default sort order MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.
-    Consumers that apply these updates to their own copy of the table MUST check that the resulting IDs match the IDs in the event. If they do not match, the consumer's copy has diverged and the consumer should load the table from the catalog.
-
-    """
-
-    root: list[TableUpdate] = Field(
-        ...,
-        description="The changes the catalog applied to the table. These can differ from the changes the client sent: they include values the catalog assigned or chose itself, such as IDs and defaults the client left out, and changes the catalog added, such as properties it sets on commit.\nUpdates that add a schema, partition spec or sort order MUST carry the ID the catalog assigned. Updates that set the current schema, the default partition spec or the default sort order MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.\nConsumers that apply these updates to their own copy of the table MUST check that the resulting IDs match the IDs in the event. If they do not match, the consumer's copy has diverged and the consumer should load the table from the catalog.\n",
-    )
-
-
-class EventViewUpdates(RootModel[list[ViewUpdate]]):
-    """
-    The changes the catalog applied to the view. These can differ from the changes the client sent: they include values the catalog assigned or chose itself, such as IDs and defaults the client left out, and changes the catalog added, such as properties it sets on commit.
-    Updates that add a schema or a view version MUST carry the ID the catalog assigned. The `schema-id` of an added view version and the update that sets the current view version MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.
-    Consumers that apply these updates to their own copy of the view MUST check that the resulting IDs match the IDs in the event. If they do not match, the consumer's copy has diverged and the consumer should load the view from the catalog.
-
-    """
-
-    root: list[ViewUpdate] = Field(
-        ...,
-        description="The changes the catalog applied to the view. These can differ from the changes the client sent: they include values the catalog assigned or chose itself, such as IDs and defaults the client left out, and changes the catalog added, such as properties it sets on commit.\nUpdates that add a schema or a view version MUST carry the ID the catalog assigned. The `schema-id` of an added view version and the update that sets the current view version MUST use an explicit ID and MUST NOT use `-1` to refer to the last added one.\nConsumers that apply these updates to their own copy of the view MUST check that the resulting IDs match the IDs in the event. If they do not match, the consumer's copy has diverged and the consumer should load the view from the catalog.\n",
-    )
 
 
 class CompletedPlanningWithIDResult(CompletedPlanningResult):
